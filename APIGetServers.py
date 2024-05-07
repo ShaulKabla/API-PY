@@ -2,7 +2,7 @@ import requests
 import json
 
 # API URL
-base_url = "https://console.kamatera.com"
+base_url = ""
 
 # Auth
 client = ""
