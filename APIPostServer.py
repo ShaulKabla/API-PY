@@ -2,7 +2,7 @@ import requests
 import json
 
 # API URL
-base_url = "https://console.kamatera.com"
+base_url = ""
 
 # Auth
 client = ""
@@ -22,7 +22,7 @@ def post_create_server(): # Warning, Valid Request
 
     # Failed to use JSON for that.
     xxxform_data = {
-        "name": "shaul-py-api-test",
+        "name": "WarCrew-py-api-test",
         "cpu": "2D",
         "ram": 1024,
         "password": "Password123!",
@@ -32,7 +32,7 @@ def post_create_server(): # Warning, Valid Request
         "network_bits_0": 24,
         "disk_size_0": 50,
         "traffic": "t5000",
-        "disk_src_0": "IL:6000C2909dfff8a20e9636c38de3165a",
+        "disk_src_0": "IL:Real-Number",
         "datacenter": "IL"
     }
 
