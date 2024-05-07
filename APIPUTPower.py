@@ -3,8 +3,8 @@ import json
 
 # API URL
 # Py server test
-base_url = "https://console.kamatera.com"
-test_server_id = "564d0f9c-b51e-a483-5463-cd528c32d226"
+base_url = ""
+test_server_id = "Real-server-ID"
 
 # Auth keys - *Problem* - Will secure it.
 client = ""
