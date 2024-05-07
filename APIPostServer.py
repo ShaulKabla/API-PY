@@ -5,8 +5,8 @@ import json
 base_url = "https://console.kamatera.com"
 
 # Auth
-client = "19c46c2899b11d00fe359f94a826bfc8"
-secret = "d467c344850d233e7872f10561cd9505"
+client = ""
+secret = ""
 
 def post_create_server(): # Warning, Valid Request
     url = base_url + "/service/server"
