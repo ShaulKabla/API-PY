@@ -1,6 +1,7 @@
 ## The code have 4 main classes: GetRequests, Postrequests, Putrequests, DeleteRequests ##
 ## Global access vars from main progrem will be the base url, headers, auth token ##
 ## auth token is genreates in auto.py using hash value of the key ##
+## encrypt.py using AES & SHA256 ##
 
 
 import requests
@@ -11,15 +12,17 @@ class WarCrewTool:
    
    @staticmethod
    def display_menu():
-    print("----Welcome to WarCrew Automated Tool-----")
-    print("1. Create Servers")
-    print("2. List Locations")
-    print("3. Manage Client")
-    print("4. List Servers")
-    print("5. Exit")
+        print("----Welcome to WarCrew Automated Tool-----")
+        print("1. Create Servers")
+        print("2. List Locations")
+        print("3. Get Server ID")
+        print("4. List Servers")
+        print("5. Process status")
+        print("6. View Notes")
+        print("7. Exit")
 
-    choice = input("Enter your choice (1-5): ")
-    return choice
+        choice = input("Enter your choice (1-7): ")
+        return choice
 
    @staticmethod
    def list_locations():
@@ -29,17 +32,22 @@ class WarCrewTool:
         "IL:0"
     ]
 
-    print(f"\nList of Locations: {list_of_locations}")
+    print(f"List of Locations: {list_of_locations}")
 
-# Checked and varifed.
+# Class for all Get req
 class GetRequests:
-    def __init__(self, base_url, headers, authentication_token):
+
+    def __init__(self, base_url, auth_headers, authentication_token, notes):
         self.base_url = base_url
         self.authentication_token = authentication_token
-        self.headers = headers
+        self.auth_headers = auth_headers
+        self.notes = notes 
 
-    def get(self, url):
-        response = requests.get(url, headers=self.headers)
+    # Base Get Req
+    def get(self, url, headers=None):
+        if headers is None:
+            headers = self.auth_headers
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             ok_data = response.json()
             return ok_data
@@ -49,7 +57,9 @@ class GetRequests:
         else:
             print("Error:", response.status_code)
         return response
-
+    
+    # GetServers API 
+    # Valid requests - working
     def get_servers(self):
         url = self.base_url + "/service/servers"
         servers = self.get(url)
@@ -74,38 +84,61 @@ class GetRequests:
                 print(f"Server ID for '{server_name}': {server['id']}")
                 print("----------------------------------------")
         else:
+            print("----------------------------------------")
             print(f"No server found with the name '{server_name}'")
 
+    def get_queue_status(self, queue_id):
+        url = f"{self.base_url}/service/queue/{queue_id}"
+        self.notes.add_note(f"Checking queue status for ID: {queue_id}")
+        data = self.get(url)
+        return data
 
-
-
+    
+    def print_queue_status(self, status):
+        if status:
+            print("Queue Status:")
+            print(f"Queue ID: {status['id']}\nStatus: {status['status']}\nDescription: {status['description']}\nCompleted: {status['completed']}")
+            print("----------------------------------------")
+        else:
+            print("No data found for the provided queue ID.")
+        
+    
+# Class for all Post req
 class PostRequest:
-   def __init__(self, base_url, headers, auth_token):
+   def __init__(self, base_url, auth_headers, json_headers, auth_token, notes):
        self.base_url = base_url
        self.auth_token = auth_token
-       self.headers = headers
+       self.auth_headers = auth_headers
+       self.json_headers = json_headers
+       self.notes = notes
 
-   def post(self, url, data):
-        response = requests.post(url, headers=self.headers, data=data)
-        if response.status_code == 200:
-            ok_data = response.json()
-            return ok_data
-        elif response.status_code == 500: # For Debug
-            print("Error 500:")
-            print(response.content.decode("utf-8"))
-        else:
-            print("Error:", response.status_code)
-        return response
+   def post(self, url, data, headers=None):
+    if headers is None:
+        headers = self.auth_headers  # Use default headers
+    response = requests.post(url, headers=headers, data=data)
+    if response.status_code == 200:
+        ok_data = response.json()
+        return ok_data
+    elif response.status_code == 405:  # For Debug
+        print("Error 405:")
+        print(response.content.decode("utf-8"))
+    elif response.status_code == 500:  # For Debug
+        print("Error 500:")
+        print(response.content.decode("utf-8"))
+    else:
+        print("Error:", response.status_code)
+    return response
 
-   def post_request(self):
+   def post_menu(self):
         while True:
             print('''
                 1. Create Server
-                2. Power on/off 
-                3. Clone Server(Req: Server ID): 
-                4. Create New Disk For Server(Req: ID): 
-                5. Create SnapShot For Server: 
-                6. Clone Disk To HDlib 
+                2. Clone Server(Req: Server ID): 
+                3. Create New Disk For Server(Req: ID): 
+                4. Create SnapShot For Server: 
+                5. Clone Disk To HDlib
+                6. Back to main menu
+                7. Exit 
             ''')
 
             user_choice = input("Choose Action: ")
@@ -120,13 +153,16 @@ class PostRequest:
                 # Code for cloning server
                 pass
             elif user_choice == "4":
-                # Code for creating new disk for server
+                #PostRequest(self.base_url, self.json_headers, authentication_token).create_disk()
                 pass
             elif user_choice == "5":
                 # Code for creating snapshot for server
                 pass
             elif user_choice == "6":
                 # Code for cloning disk to HDlib
+                pass
+            elif user_choice == "7":
+                # Code for exit progrem
                 pass
             else:
                 print("Invalid choice. Please select a valid option.")
@@ -183,34 +219,111 @@ class PostRequest:
 
         return params
 
-
+    # Post create server using func user_data_server
+    # Varifed working
    def create_server(self):
-       url = self.base_url + "/service/server"
+    url = self.base_url + "/service/server"
+    params = self.user_data_server()  # Call the method to get the parameters
+    if params:  # Check if parameters were returned
+        print("Creating the Server ...")
+        post_id_server = self.post(url, data=params)
+        self.notes.add_note(f"Creating Server: {post_id_server}")
+        print(f"Queue ID: {post_id_server}")
+    else:
+        print("Server creation cancelled.")
+   
+   # API Post req to creating new disk
+   def create_disk(self): 
+       server_id = input("Enter server ID to create disk on: ")
+       disk_size = input("Enter disk size(GB): ")
+       url = self.base_url + f"/service/{server_id}/disk"
+       
+       data = {
+            "size": disk_size,
+            "provision": 0
+        }
+       # The actual req with JSON headers
+       post_create_disk = self.post(url, headers=self.json_headers, data=data)
+       print(post_create_disk)
+       return None
+       
+   
+class PutRequest:
+   def __init__(self, base_url, auth_headers, xxxform_headers, json_headers, auth_token):
+       self.base_url = base_url
+       self.auth_token = auth_token
+       self.xxxform_headers = xxxform_headers
+       
+    # Basic Put Req   
+   def put(self, url, data):
+        response = requests.put(url, headers=self.headers, data=data)
+        if response.status_code == 200:
+            ok_data = response.json()
+            return ok_data
+        elif response.status_code == 500: # For Debug
+            print("Error 500:")
+            print(response.content.decode("utf-8"))
+        else:
+            print("Error:", response.status_code)
+        return response
+    
+   def server_power(self):
+       return
+   
+class Notes:
+    def __init__(self):
+        self.notes = []
 
+    def add_note(self, note):
+        self.notes.append(note)
 
-       response = requests.post(url, headers=headers, data=data)
+    def get_notes(self):
+        return self.notes
+            
+    
 
 def main():
     base_url = "https://console.kamatera.com"
 
-    headers = {
-        "Authorization": "Bearer " + authentication_token,
+    auth_headers = {
+        "Authorization": "Bearer " + authentication_token
     }
+    
+    json_headers = {
+        "Authorization": "Bearer " + authentication_token,
+        "Content-Type": "application/json"
+    }
+    notes = Notes()
 
     while True:
         choice = WarCrewTool.display_menu()
 
         if choice == "1":
-            PostRequest(base_url, headers, authentication_token).create_servers()
+            post_request = PostRequest(base_url, auth_headers, json_headers, authentication_token, notes)
+            post_request.create_server()
         elif choice == "2":
             WarCrewTool.list_locations()
-        elif choice == "3":
-            GetRequests(base_url, headers, authentication_token).get_server_id_by_name()
+        elif choice == "3": 
+            GetRequests(base_url, auth_headers, authentication_token, notes).get_server_id_by_name()
         elif choice == "4":
-            get_requests = GetRequests(base_url, headers, authentication_token)
+            get_requests = GetRequests(base_url, auth_headers, authentication_token, notes)
             servers = get_requests.get_servers()
             get_requests.print_servers(servers)
         elif choice == "5":
+            get_requests = GetRequests(base_url, auth_headers, authentication_token, notes)
+            queue_id = input("Enter Queue ID: ")
+            status = get_requests.get_queue_status(queue_id)
+            get_requests.print_queue_status(status)
+        elif choice == "6":
+            saved_notes = notes.get_notes()
+            if saved_notes:
+                print("Notes:")
+            for note in saved_notes:
+                print(note)
+            else:
+                print("No notes saved yet.")
+
+        elif choice == "7":
             print("----Thank You for using WarCrew Automated Tool-----")
             break
         else:
