@@ -29,36 +29,12 @@ class WarCrewTool:
         print("4. List Servers")
         print("5. Process status")
         print("6. View Notes")
-        print("7. Exit")
+        print("7. Power On/Off server")
+        print("8. Exit")
 
         choice = input("Enter your choice (1-7): ")
         return choice
 
-   @staticmethod
-   def list_locations():
-    list_of_locations = [
-        ("CA-TR", "Canada"),
-        ("EU", "The Netherlands"),
-        ("EU-FR", "Germany"),
-        ("EU-LO", "United Kingdom"),
-        ("EU-MD", "Spain"),
-        ("EU-ML", "Italy"),
-        ("EU-ST", "Sweden"),
-        ("IL", "Israel"),
-        ("IL-HA", "Israel"),
-        ("IL-PT", "Israel"),
-        ("IL-RH", "Israel"),
-        ("IL-TA", "Israel"),
-        ("US-AT", "US-AT"),
-        ("US-CH", "United States"),
-        ("US-LA", "US-LA"),
-        ("US-MI", "United States"),
-        ("US-NY2", "United States"),
-        ("US-SC", "United States"),
-        ("US-SE", "US-SE"),
-        ("US-TX", "United States")
-    ]
-    print(f"List of Locations: {list_of_locations}")
 
 class Lists:
    @staticmethod
@@ -258,27 +234,36 @@ class PutRequest:
         response = requests.put(url, headers=self.auth_headers, data=data)
         if response.status_code == 200:
             ok_data = response.json()
+            print("Success!")
             return ok_data
         elif response.status_code == 500: # For Debug
             print("Error 500:")
             print(response.content.decode("utf-8"))
         else:
             print("Error:", response.status_code)
+            print(response.content.decode("utf-8"))
         return response
     
    def server_power(self):
+       server_id = input("Enter valid server ID: ")
+       url = f"{self.base_url}/service/server/{server_id}/power"
        power_choice = input("1.Power On/2.Power Off: ")
+       
        if power_choice == '1':         
             data = {
                 "power": "on"
             }
+            print("Power Up...")
        elif power_choice == '2':
             data = {
                 "power": "off"
             }
+            print("ShutDown...")
        else:
            # Code for handle errors
            pass
+       request = self.put(url, data)
+       return request
         
 class UserInput:
       def user_data_server():
@@ -305,7 +290,7 @@ class UserInput:
 
          while True:
             cpu = input("Enter CPU: ")
-            if cpu not in Lists.cpu_list():
+            if cpu.upper() not in Lists.cpu_list():
                   print("Invalid.")
                   continue
             else:
@@ -458,8 +443,9 @@ def main():
                 print(note)
             else:
                 print("No notes saved yet.")
-
         elif choice == "7":
+            get_requests = PutRequest(base_url, auth_headers, authentication_token, notes).server_power()
+        elif choice == "8":
             print("----Thank You for using WarCrew Automated Tool-----")
             break
         else:
