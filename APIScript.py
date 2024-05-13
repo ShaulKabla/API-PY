@@ -1,13 +1,23 @@
 ## The code have 4 main classes: GetRequests, Postrequests, Putrequests, DeleteRequests ##
 ## Global access vars from main progrem will be the base url, headers, auth token ##
 ## auth token is genreates in auto.py using hash value of the key ##
-## encrypt.py using AES & SHA256 ##
+
+# Next stage:
+# Dealing with all the Put class section
+# May to think of a way to creat function for all the response errors from the server. can do so with the utf encode
+# it will effect all the section of the basic requests
 
 
 import requests
 import json
 from auth import authentication_token
 
+
+class Errors(Exception):
+    def exc():
+        if Exception : pass
+    
+    
 class WarCrewTool:
    
    @staticmethod
@@ -27,12 +37,90 @@ class WarCrewTool:
    @staticmethod
    def list_locations():
     list_of_locations = [
-        "IL:0",
-        "IL:0",
-        "IL:0"
+        ("CA-TR", "Canada"),
+        ("EU", "The Netherlands"),
+        ("EU-FR", "Germany"),
+        ("EU-LO", "United Kingdom"),
+        ("EU-MD", "Spain"),
+        ("EU-ML", "Italy"),
+        ("EU-ST", "Sweden"),
+        ("IL", "Israel"),
+        ("IL-HA", "Israel"),
+        ("IL-PT", "Israel"),
+        ("IL-RH", "Israel"),
+        ("IL-TA", "Israel"),
+        ("US-AT", "US-AT"),
+        ("US-CH", "United States"),
+        ("US-LA", "US-LA"),
+        ("US-MI", "United States"),
+        ("US-NY2", "United States"),
+        ("US-SC", "United States"),
+        ("US-SE", "US-SE"),
+        ("US-TX", "United States")
     ]
-
     print(f"List of Locations: {list_of_locations}")
+
+class Lists:
+   @staticmethod
+   def cpu_list():
+      cpu_list = [
+         "1A", "2A", "4A",
+         "1B", "2B", "4B",
+         "1T", "2T", "4T", "6T",
+         "1D", "2D", "4D", "6D", "8D"
+      ]
+      return cpu_list
+  
+   @staticmethod
+   def ram_list():
+      ram_list = [256, 512, 1024, 2048, 3072, 4096, 6144, 8192, 10240, 122288, 16384]
+      return ram_list
+      
+   @staticmethod
+   def disk_size_list():
+      disk_size_list = [5, 10, 15, 20, 30, 40, 50, 60, 80, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000, 1500, 2000, 3000, 4000]
+      return disk_size_list
+
+   # Using the first server from "GetServer" Etc: service_rancher
+   # I think the disk_src is the image for the server.
+   @staticmethod
+   def disk_src_list():
+      disk_src_list = {
+      "AS":"AS:6000C2902374d7b52d94b0ec5361f16a",
+      "CA-TR": "CA-TR:6000C2902374d7b52d94b0ec5361f16a",
+      "EU": "EU:6000C2902374d7b52d94b0ec5361f16a",
+      "EU-FR": "EU-FR:6000C2902374d7b52d94b0ec5361f16a",
+      "EU-LO": "EU-LO:6000C2902374d7b52d94b0ec5361f16a",
+      "EU-MD": "EU-MD:6000C2902374d7b52d94b0ec5361f16a",
+      "EU-ML": "EU-ML:6000C2902374d7b52d94b0ec5361f16a",
+      "EU-ST": "EU-ST:6000C2902374d7b52d94b0ec5361f16a",
+      "IL": "IL:6000C2902374d7b52d94b0ec5361f16a",
+      "IL": "IL:6000C2909dfff8a20e9636c38de3165a", # Valid Disk SRC
+      "IL-HA": "IL-HA:6000C2902374d7b52d94b0ec5361f16a",
+      "IL-PT": "IL-PT:6000C2902374d7b52d94b0ec5361f16a",
+      "IL-RH": "IL-RH:6000C2902374d7b52d94b0ec5361f16a",
+      "IL-TA": "IL-TA:6000C2902374d7b52d94b0ec5361f16a",
+      "US-AT": "US-AT:6000C2902374d7b52d94b0ec5361f16a",
+      "US-CH": "US-CH:6000C2902374d7b52d94b0ec5361f16a",
+      "US-LA": "US-MI:6000C2902374d7b52d94b0ec5361f16a",
+      "US-MI": "US-MI:6000C2903625e92a0d57060fabd61807",
+      "US-NY2": "US-NY2:6000C2902374d7b52d94b0ec5361f16a",
+      "US-SC": "US-SC:6000C2902374d7b52d94b0ec5361f16a",
+      "US-SE": "US-TX:6000C2902374d7b52d94b0ec5361f16a",
+      "US-TX": "US-TX:6000C2903625e92a0d57060fabd61807"
+   }
+      return disk_src_list
+
+    
+    
+class ErrorHandler:
+    @staticmethod  
+    def genral_error(error):
+        print(f"Somthing Wrong... Exiting progrem. Error: {error}")
+        
+    def userinput_error(error):
+        print("You Entered Invalid params")
+        
 
 # Class for all Get req
 class GetRequests:
@@ -102,7 +190,7 @@ class GetRequests:
         else:
             print("No data found for the provided queue ID.")
         
-    
+
 # Class for all Post req
 class PostRequest:
    def __init__(self, base_url, auth_headers, json_headers, auth_token, notes):
@@ -129,101 +217,12 @@ class PostRequest:
         print("Error:", response.status_code)
     return response
 
-   def post_menu(self):
-        while True:
-            print('''
-                1. Create Server
-                2. Clone Server(Req: Server ID): 
-                3. Create New Disk For Server(Req: ID): 
-                4. Create SnapShot For Server: 
-                5. Clone Disk To HDlib
-                6. Back to main menu
-                7. Exit 
-            ''')
-
-            user_choice = input("Choose Action: ")
-            if user_choice == "1":
-                # Code for creating server
-                pass
-            elif user_choice == "2":
-                data = self.server_power()
-                # Code for power on/off
-                pass
-            elif user_choice == "3":
-                # Code for cloning server
-                pass
-            elif user_choice == "4":
-                #PostRequest(self.base_url, self.json_headers, authentication_token).create_disk()
-                pass
-            elif user_choice == "5":
-                # Code for creating snapshot for server
-                pass
-            elif user_choice == "6":
-                # Code for cloning disk to HDlib
-                pass
-            elif user_choice == "7":
-                # Code for exit progrem
-                pass
-            else:
-                print("Invalid choice. Please select a valid option.")
-
-## Taking input from the user for creating a server
-## 
-
-   def user_data_server(self):
-    name_server = input("Enter the name of the server: ")
-    disk_src = input("Enter Disk Source: ") # Still not sure how the storage orginzed
-    cpu = input("Enter CPU: ")
-    ram = input("Enter Ram: ")
-    password = input("Enter Password: ")
-    billing = input("Billing (monthly/hourly): ")
-    network_name = input("Network name(wan/la-1-**lan-network-name**): ") # wan for automated process
-    
-    if network_name == "wan": # wan auto conf (can't blank - api)
-        network_ip = "192.168.100.1"
-    else:
-        network_ip = input("Enter valid IP: ")
-
-    network_bits = "24"
-    disk_size = input("Enter Disk Size: ")
-    traffic = input("Choose Traffic(1.World/2.Asia): ")
-    if traffic == "1":
-        traffic = "t5000"
-    else:
-        traffic = "t1000"
-
-    while True:
-        datacenter = input("Enter DataCenter (type 'help' for list): ")
-        if datacenter == "help":
-            WarCrewTool.list_locations()
-        else:
-            break
-
-    if datacenter == "help":
-        return None
-    else:
-        params = {
-            "name": name_server,
-            "cpu": cpu,
-            "ram": ram,
-            "password": password,
-            "billing": billing,
-            "network_name_0": network_name,
-            "network_ip_0": network_ip,
-            "network_bits_0": network_bits,
-            "disk_size_0": disk_size,
-            "traffic": traffic,
-            "disk_src_0": disk_src,
-            "datacenter": datacenter
-        }
-
-        return params
 
     # Post create server using func user_data_server
     # Varifed working
    def create_server(self):
     url = self.base_url + "/service/server"
-    params = self.user_data_server()  # Call the method to get the parameters
+    params = UserInput.user_data_server()  # Call the method to get the parameters
     if params:  # Check if parameters were returned
         print("Creating the Server ...")
         post_id_server = self.post(url, data=params)
@@ -249,14 +248,14 @@ class PostRequest:
        
    
 class PutRequest:
-   def __init__(self, base_url, auth_headers, xxxform_headers, json_headers, auth_token):
+   def __init__(self, base_url, auth_headers, json_headers, auth_token):
        self.base_url = base_url
        self.auth_token = auth_token
-       self.xxxform_headers = xxxform_headers
+       self.auth_headers = auth_headers
        
     # Basic Put Req   
    def put(self, url, data):
-        response = requests.put(url, headers=self.headers, data=data)
+        response = requests.put(url, headers=self.auth_headers, data=data)
         if response.status_code == 200:
             ok_data = response.json()
             return ok_data
@@ -268,7 +267,145 @@ class PutRequest:
         return response
     
    def server_power(self):
-       return
+       power_choice = input("1.Power On/2.Power Off: ")
+       if power_choice == '1':         
+            data = {
+                "power": "on"
+            }
+       elif power_choice == '2':
+            data = {
+                "power": "off"
+            }
+       else:
+           # Code for handle errors
+           pass
+        
+class UserInput:
+      def user_data_server():
+         name_server = input("Enter the name of the server: ")
+         
+         # Using the first server from "GetServer" Etc: service_rancher
+         # I think the disk_src is the image for the server.
+         
+         while True:
+            datacenter = input("Enter DataCenter: ")
+            if datacenter.upper() not in Lists.disk_src_list().keys():
+                  print("Invalid")
+                  continue
+            else:
+                  break
+         
+         while True:
+            disk_src = input("Enter Disk Source: ")
+            if disk_src not in Lists.disk_src_list().values():
+                  print("Invalid")
+                  continue
+            else:
+                  break
+
+         while True:
+            cpu = input("Enter CPU: ")
+            if cpu not in Lists.cpu_list():
+                  print("Invalid.")
+                  continue
+            else:
+                  break
+               
+         while True:
+            disk_size = input("Enter Disk Size(GB): ")
+            disk_size = int(disk_size)
+            if disk_size not in Lists.disk_size_list():
+               print("Invalid.")
+               continue
+            else:
+               break
+
+
+         while True:
+            ram = input("Enter Ram(MB): ")
+            if ram not in [str(r) for r in Lists.ram_list()]:
+                  print("Invalid.")
+            else:
+                  break
+
+         while True:
+            password = input("Enter Password: ")
+            if len(password) >= 12 and any(char.isupper() for char in password) and any(char.isdigit() for char in password) and any(char in "!@#$%^&*()-_=+`~,.<>/\\?|{}[]" for char in password):
+                  break
+            else:
+                  print("Weak Password")
+
+         while True:
+            billing = input("Enter Billing Method(1.Monthly/2.Hourly): ")
+            if billing == "1":
+                  billing = "monthly"
+                  break
+            elif billing == "2":
+                  billing = "hourly"
+                  break
+            else:
+                  print("Invalid Method")
+            
+         while True:
+            traffic = input("Choose Traffic(1.World/2.Asia): ")
+            if traffic == "1":
+               traffic = "t5000"
+               break
+            elif traffic =="2":
+               traffic = "t1000"
+               break
+            else:
+               print("Invalid Input")
+
+
+         while True:
+            network_name = input("Network name(1.Wan/2.Lan): ")
+            if network_name == "1":
+                  network_name = "wan"
+                  params = {
+                     "disk_src_0": disk_src,
+                     "datacenter": datacenter,
+                     "name": name_server,
+                     "cpu": cpu,
+                     "ram": ram,
+                     "password": password,
+                     "billing": billing,
+                     "network_name_0": network_name,
+                     "disk_size_0": disk_size,
+                     "traffic": traffic
+                  }
+                  
+                  return params
+            elif network_name == "2":
+                  params = {
+                     "disk_src_0": disk_src,
+                     "datacenter": datacenter,
+                     "name": name_server,
+                     "cpu": cpu,
+                     "ram": ram,
+                     "password": password,
+                     "billing": billing,
+                     "traffic": traffic,
+                  }
+                  num_lans = int(input("How many LANs do you want to create?: "))
+                  lan_net_bits = input("Enter Network Bits for all LANs: ")
+                  lan_name_base = input("Enter Lan Network Name: ")
+
+                  for i in range(num_lans):
+                     lan_name = f"lan-{lan_name_base}"
+                     lan_ip = input(f"Enter IP{i} for the server:{name_server}{i}: ")
+
+                     octets = lan_ip.split('.')
+                     octets[-1] = str(int(octets[-1]) + i)
+                     lan_ip = '.'.join(octets)
+
+                     params[f"network_name_{i}"] = lan_name
+                     params[f"network_ip_{i}"] = lan_ip
+                     params[f"network_bits_{i}"] = lan_net_bits
+
+                  return params
+            else:
+                  print("Invalid Choose")
    
 class Notes:
     def __init__(self):
@@ -280,7 +417,6 @@ class Notes:
     def get_notes(self):
         return self.notes
             
-    
 
 def main():
     base_url = "https://console.kamatera.com"
