@@ -24,7 +24,6 @@
 # Beta test 
 
 import requests
-import json
 import time
 from auth import authentication_token
 
@@ -44,7 +43,7 @@ class WarCrewTool:
         print("5. Process status")
         print("6. View Notes")
         print("7. Power On/Off server")
-        print("8. Exit")
+        print("8. **Delete Server**")
 
         choice = input("Enter your choice (1-7): ")
         return choice
@@ -136,7 +135,7 @@ class GetRequests:
             print(response.content.decode("utf-8"))
         else:
             print("Error:", response.status_code)
-        return response.json()
+        return response
     
     # GetServers API 
     # Valid requests - working
@@ -169,11 +168,10 @@ class GetRequests:
 
     def get_queue_status(self, queue_id):
         url = f"{self.base_url}/service/queue/{queue_id}"
-        print(f"Response data: {queue_id}")  # debug
-        print(f"Response data: {url}")  # debug
         self.notes.add_note(f"Checking queue status for ID: {queue_id}")
         data = self.get(url)
         return data
+
     
     def print_queue_status(self, status):
         if status:
@@ -199,8 +197,6 @@ class PostRequest:
     response = requests.post(url, headers=headers, data=data)
     if response.status_code == 200:
         ok_data = response.json()
-        if isinstance(ok_data, list) and len(ok_data) == 1: # Handle queue [] ID list
-            ok_data = ok_data[0]
         return ok_data
     elif response.status_code == 404:  # For Debug
         print("Error 404:")
@@ -210,7 +206,6 @@ class PostRequest:
         print(response.content.decode("utf-8"))
     else:
         print("Error:", response.status_code)
-        print(response.content.decode("utf-8"))
     return response
 
 
@@ -232,30 +227,18 @@ class PostRequest:
 
    def clone_server(self):
     url = self.base_url + "/service/server/clone"
-    params, clone_loop, base_clone_name = UserInput().user_clone_server()
+    params, clone_loop, base_clone_name = UserInput().user_clone_server()  # Call the method from an instance of UserInput
 
     if params:
         print("Cloning the Servers ...")
         clone_loop = int(clone_loop)
         for i in range(clone_loop):
-            params["name"] = f"{base_clone_name}.{i}"
+            params["name"] = f"{base_clone_name}.{i}"  # Set the "name" key with the current clone name
             print(params)
+            time.sleep(10)
             post_clone_server = self.post(url, data=params)
-            if post_clone_server:
-                queue_id = post_clone_server
-                self.notes.add_note(f"Cloning Server {i}: {queue_id}")
-                print(f"Server {i} Queue ID: {queue_id}")
-                time.sleep(10)
-                # Wait until the queue status is "completed"
-                get_requests = GetRequests(self.base_url, self.auth_headers, self.auth_token, self.notes)
-                while True:
-                    queue_status = get_requests.get_queue_status(queue_id)
-                    if queue_status["status"] == "complete":
-                        print(f"{base_clone_name}.{i} cloning completed successfully.")
-                        break
-                    else:
-                        print(f"Server {i} cloning is in progress. Status: {queue_status['status']}")
-                        time.sleep(120)
+            self.notes.add_note(f"Cloning Server {i}: {post_clone_server}")
+            print(f"Server {i} TID: {post_clone_server}")
     else:
         print("Server cloning failed.")
    
@@ -316,6 +299,39 @@ class PutRequest:
            pass
        request = self.put(url, data)
        return request
+
+class DeleteRequests:
+   def __init__(self, base_url, auth_headers, json_headers, auth_token):
+       self.base_url = base_url
+       self.auth_token = auth_token
+       self.auth_headers = auth_headers
+
+    # Basic Delete Req   
+   def delete(self, url, data, headers=None):
+        response = requests.delete(url, headers=self.auth_headers, data=data)
+        if response.status_code == 200:
+            ok_data = response.json()
+            print("Success!")
+            return ok_data
+        elif response.status_code == 500: # For Debug
+            print("Error 500:")
+            print(response.content.decode("utf-8"))
+        else:
+            print("Error:", response.status_code)
+            print(response.content.decode("utf-8"))
+        return response
+
+   def terminate_server(self, server_id, confirm=1, force=None):
+        self.server_id = server_id
+        self.force = force
+
+        url = f"{self.base_url}/service/server/{server_id}/terminate"
+        data = {"confirm": confirm, "force": force}
+        delete_server = self.delete(url, headers=self.auth_headers, data=data)
+        print(delete_server)
+        return delete_server
+
+
 # Class for all User Input die in hell        
 class UserInput:
       def user_data_server():
@@ -464,7 +480,6 @@ class UserInput:
                   print("Invalid Choose")
 
 
-
       def user_clone_server(self):  # Add self to the method signature
         clone_source_id = input("Enter server ID to clone: ")  # Will create fun to check id with get serverid
         base_clone_name = input("Enter base name for the clones: ")
@@ -507,6 +522,19 @@ class UserInput:
 
         return params, clone_loop, base_clone_name  # Returning base_clone_name
 
+      def user_delete_server():
+          while True:
+            print("******Warning, You'r about to delete server******")
+            server_id = str(input("Enter Server ID to delete?: "))
+            user_confirm = input("Are you sure?(Write:Yes/2.No):")
+            if user_confirm == "Yes":
+                    force = "1"
+                    return server_id, force
+            elif user_confirm == "2":
+                    WarCrewTool.display_menu() # ***breaking the code*** need to finish that exit progrem part
+                    return None
+            else:
+                    print("Invalid input")
       
 # Class for Notes - sucssesful Tid - Need to learn about logging
 class Notes:
@@ -563,7 +591,16 @@ def main():
                 print("No notes saved yet.")
         elif choice == "7":
             get_requests = PutRequest(base_url, auth_headers, authentication_token, notes).server_power()
+        
         elif choice == "8":
+            get_requests = DeleteRequests(base_url, auth_headers, authentication_token, notes)
+            server_id, force = UserInput.user_delete_server()
+            get_requests.terminate_server(server_id, force)
+            
+
+        
+        
+        elif choice == "200":
             print("----Thank You for using WarCrew Automated Tool-----")
             break
         else:
