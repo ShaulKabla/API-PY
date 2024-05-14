@@ -1,29 +1,43 @@
 ## The code have 4 main classes: GetRequests, Postrequests, Putrequests, DeleteRequests ##
 ## Global access vars from main progrem will be the base url, headers, auth token ##
 ## auth token is genreates in auto.py using hash value of the key ##
+## encrypt.py using AES & SHA256 ## Going to change the method to pyc & input user
 
-# Next stage:
-# Dealing with all the Put class section
-# May to think of a way to creat function for all the response errors from the server. can do so with the utf encode
-# it will effect all the section of the basic requests
+## Handling error method:
+## Going to create new class for error handle.
+## The class include fun to handle: User input santize, Server response errors & sucsses, TypeError, menu errors
 
+
+# Next times from here: Eslimited time: 1.5 Week. ## 1.4
+# Create Put class - CHECK + POWER WORKING
+# Create Post Clone - CHECK
+# Building a Loop that post the server - CHECK
+# Work on fun to check id with get serverid 
+# Creat Delete class
+# Adjust the main menu 
+# Implement pyc and use user input keys
+# Dealing with the error class
+# Sanitze user input - CHECK
+# Modify the create server fun to include lan options 
+# Modify the notes to log file.
+# Create All ENDPoints of the API
+# Beta test 
 
 import requests
 import json
+import time
 from auth import authentication_token
 
 
-class Errors(Exception):
-    def exc():
-        if Exception : pass
-    
-    
+# Class for menu and maybe other things    
 class WarCrewTool:
    
+   # Must to find better way for the menu
    @staticmethod
    def display_menu():
         print("----Welcome to WarCrew Automated Tool-----")
         print("1. Create Servers")
+        print("2. Clone Servers")
         print("2. List Locations")
         print("3. Get Server ID")
         print("4. List Servers")
@@ -35,7 +49,7 @@ class WarCrewTool:
         choice = input("Enter your choice (1-7): ")
         return choice
 
-
+# Class from API doc for the options
 class Lists:
    @staticmethod
    def cpu_list():
@@ -88,7 +102,7 @@ class Lists:
       return disk_src_list
 
     
-    
+# Classes for Errors. Not sure yet how to fully modify it    
 class ErrorHandler:
     @staticmethod  
     def genral_error(error):
@@ -96,7 +110,9 @@ class ErrorHandler:
         
     def userinput_error(error):
         print("You Entered Invalid params")
-        
+class Errors(Exception):
+    def exc():
+        if Exception : pass        
 
 # Class for all Get req
 class GetRequests:
@@ -120,7 +136,7 @@ class GetRequests:
             print(response.content.decode("utf-8"))
         else:
             print("Error:", response.status_code)
-        return response
+        return response.json()
     
     # GetServers API 
     # Valid requests - working
@@ -138,7 +154,7 @@ class GetRequests:
         else:
             print("No servers found.")
 
-    def get_server_id_by_name(self):
+    def get_server_id_by_name(self): # Get All server of the client API or Admin dep
         server_name = input("Enter Server Name: ")
         servers = self.get_servers()
         matching_servers = [server for server in servers if server['name'] == server_name]
@@ -153,10 +169,11 @@ class GetRequests:
 
     def get_queue_status(self, queue_id):
         url = f"{self.base_url}/service/queue/{queue_id}"
+        print(f"Response data: {queue_id}")  # debug
+        print(f"Response data: {url}")  # debug
         self.notes.add_note(f"Checking queue status for ID: {queue_id}")
         data = self.get(url)
         return data
-
     
     def print_queue_status(self, status):
         if status:
@@ -182,15 +199,18 @@ class PostRequest:
     response = requests.post(url, headers=headers, data=data)
     if response.status_code == 200:
         ok_data = response.json()
+        if isinstance(ok_data, list) and len(ok_data) == 1: # Handle queue [] ID list
+            ok_data = ok_data[0]
         return ok_data
-    elif response.status_code == 405:  # For Debug
-        print("Error 405:")
+    elif response.status_code == 404:  # For Debug
+        print("Error 404:")
         print(response.content.decode("utf-8"))
     elif response.status_code == 500:  # For Debug
         print("Error 500:")
         print(response.content.decode("utf-8"))
     else:
         print("Error:", response.status_code)
+        print(response.content.decode("utf-8"))
     return response
 
 
@@ -206,6 +226,38 @@ class PostRequest:
         print(f"Queue ID: {post_id_server}")
     else:
         print("Server creation cancelled.")
+
+
+
+
+   def clone_server(self):
+    url = self.base_url + "/service/server/clone"
+    params, clone_loop, base_clone_name = UserInput().user_clone_server()
+
+    if params:
+        print("Cloning the Servers ...")
+        clone_loop = int(clone_loop)
+        for i in range(clone_loop):
+            params["name"] = f"{base_clone_name}.{i}"
+            print(params)
+            post_clone_server = self.post(url, data=params)
+            if post_clone_server:
+                queue_id = post_clone_server
+                self.notes.add_note(f"Cloning Server {i}: {queue_id}")
+                print(f"Server {i} Queue ID: {queue_id}")
+                time.sleep(10)
+                # Wait until the queue status is "completed"
+                get_requests = GetRequests(self.base_url, self.auth_headers, self.auth_token, self.notes)
+                while True:
+                    queue_status = get_requests.get_queue_status(queue_id)
+                    if queue_status["status"] == "complete":
+                        print(f"{base_clone_name}.{i} cloning completed successfully.")
+                        break
+                    else:
+                        print(f"Server {i} cloning is in progress. Status: {queue_status['status']}")
+                        time.sleep(120)
+    else:
+        print("Server cloning failed.")
    
    # API Post req to creating new disk
    def create_disk(self): 
@@ -222,7 +274,7 @@ class PostRequest:
        print(post_create_disk)
        return None
        
-   
+# Class for all Put req  
 class PutRequest:
    def __init__(self, base_url, auth_headers, json_headers, auth_token):
        self.base_url = base_url
@@ -264,7 +316,7 @@ class PutRequest:
            pass
        request = self.put(url, data)
        return request
-        
+# Class for all User Input die in hell        
 class UserInput:
       def user_data_server():
          name_server = input("Enter the name of the server: ")
@@ -361,6 +413,7 @@ class UserInput:
                   }
                   
                   return params
+            
             elif network_name == "2":
                   params = {
                      "disk_src_0": disk_src,
@@ -372,8 +425,26 @@ class UserInput:
                      "billing": billing,
                      "traffic": traffic,
                   }
+                  
+
                   num_lans = int(input("How many LANs do you want to create?: "))
-                  lan_net_bits = input("Enter Network Bits for all LANs: ")
+
+                  while True:
+                    lan_net_bits = input("Enter Network Bits for all LANs: ")
+                    if lan_net_bits.isdigit() and int(lan_net_bits) in range(20, 31):
+                        lan_net_bits = int(lan_net_bits)
+                        break
+                    else:
+                        print("Invalid input. 20-30")
+
+                  while True:
+                    num_lans = int(input("How many LANs do you want to create?: "))
+                    if num_lans.isdigit() and int(num_lans) in range(231): #prefix 24 with reserved Ip's
+                        num_lans = int(num_lans)
+                        break
+                    else:
+                        print("Invalid input.")
+                  
                   lan_name_base = input("Enter Lan Network Name: ")
 
                   for i in range(num_lans):
@@ -391,7 +462,53 @@ class UserInput:
                   return params
             else:
                   print("Invalid Choose")
-   
+
+
+
+      def user_clone_server(self):  # Add self to the method signature
+        clone_source_id = input("Enter server ID to clone: ")  # Will create fun to check id with get serverid
+        base_clone_name = input("Enter base name for the clones: ")
+
+        # to not overload CWM Limiting to 10 clones per request
+        while True:
+            clone_loop = input("How many clones you want to create? (Max: 7): ")
+            if clone_loop.isdigit() and int(clone_loop) in range(1, 8):
+                clone_loop = int(clone_loop)
+                break
+            else:
+                print("Invalid input. Please enter a number between 1 and 7.")
+
+        while True:
+            password = input("Enter Password: ")
+            if len(password) >= 12 and any(char.isupper() for char in password) and any(
+                    char.isdigit() for char in password) and any(
+                char in "!@#$%^&*()-_=+`~,.<>/\\?|{}[]" for char in password):
+                break
+            else:
+                print("Weak Password")
+
+        while True:
+            billing = input("Enter Billing Method (1.Monthly/2.Hourly): ")
+            if billing == "1":
+                billing = "monthly"
+                break
+            elif billing == "2":
+                billing = "hourly"
+                break
+            else:
+                print("Invalid Method")
+
+        params = {
+            "source": clone_source_id,
+            "name": base_clone_name,
+            "password": password,
+            "billing": billing,
+        }
+
+        return params, clone_loop, base_clone_name  # Returning base_clone_name
+
+      
+# Class for Notes - sucssesful Tid - Need to learn about logging
 class Notes:
     def __init__(self):
         self.notes = []
@@ -423,7 +540,8 @@ def main():
             post_request = PostRequest(base_url, auth_headers, json_headers, authentication_token, notes)
             post_request.create_server()
         elif choice == "2":
-            WarCrewTool.list_locations()
+            post_request = PostRequest(base_url, auth_headers, json_headers, authentication_token, notes)
+            post_request.clone_server()
         elif choice == "3": 
             GetRequests(base_url, auth_headers, authentication_token, notes).get_server_id_by_name()
         elif choice == "4":
