@@ -38,7 +38,6 @@ def put_power(): # Warning, Valid Request
     else:
        print("Error:", response.status_code)
 
-    # Storing the ID Ticket in var for future use
 
     SucessID = str(ok_data)
     return None
