@@ -3,25 +3,6 @@
 ## auth token is genreates in auto.py using hash value of the key ##
 ## encrypt.py using AES & SHA256 ## Going to change the method to pyc & input user
 
-## Handling error method:
-## Going to create new class for error handle.
-## The class include fun to handle: User input santize, Server response errors & sucsses, TypeError, menu errors
-
-
-# Next times from here: Eslimited time: 1.5 Week. ## 1.4
-# Create Put class - CHECK + POWER WORKING
-# Create Post Clone - CHECK
-# Building a Loop that post the server - CHECK
-# Work on fun to check id with get serverid 
-# Creat Delete class
-# Adjust the main menu 
-# Implement pyc and use user input keys
-# Dealing with the error class
-# Sanitze user input - CHECK
-# Modify the create server fun to include lan options 
-# Modify the notes to log file.
-# Create All ENDPoints of the API
-# Beta test 
 
 import requests
 import json
