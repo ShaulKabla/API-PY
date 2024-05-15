@@ -1,7 +1,7 @@
 import requests
 from encrypt import decrypt_api, load_key_from_file, encrypted_client, encrypted_secret
 
-base_url = "https://console.kamatera.com"
+base_url = "https://"
 
 key = load_key_from_file("keys.txt")
 
