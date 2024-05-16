@@ -53,7 +53,7 @@ class Lists:
       return disk_size_list
 
    # Using the first server from "GetServer" Etc: service_rancher
-   # I think the disk_src is the image for the server.
+   # The disk_src is the image for the server.
    @staticmethod
    def disk_src_list():
       disk_src_list = {
@@ -61,7 +61,7 @@ class Lists:
       return disk_src_list
 
     
-# Classes for Errors. Not sure yet how to fully modify it    
+# Classes for Errors. Not working yet    
 class ErrorHandler:
     @staticmethod  
     def genral_error(error):
@@ -98,7 +98,7 @@ class GetRequests:
         return response.json()
     
     # GetServers API 
-    # Valid requests - working
+    # Valid requests
     def get_servers(self):
         url = self.base_url + "/service/servers"
         servers = self.get(url)
@@ -173,8 +173,7 @@ class PostRequest:
     return response
 
 
-    # Post create server using func user_data_server
-    # Varifed working
+    # Post create server using fun user_data_server
    def create_server(self):
     url = self.base_url + "/service/server"
     params = UserInput.user_data_server()  # Call the method to get the parameters
@@ -281,7 +280,6 @@ class UserInput:
          name_server = input("Enter the name of the server: ")
          
          # Using the first server from "GetServer" Etc: service_rancher
-         # I think the disk_src is the image for the server.
          
          while True:
             datacenter = input("Enter DataCenter: ")
@@ -424,7 +422,7 @@ class UserInput:
 
 
 
-      def user_clone_server(self):  # Add self to the method signature
+      def user_clone_server(self):  
         clone_source_id = input("Enter server ID to clone: ")  # Will create fun to check id with get serverid
         base_clone_name = input("Enter base name for the clones: ")
 
@@ -467,7 +465,7 @@ class UserInput:
         return params, clone_loop, base_clone_name  # Returning base_clone_name
 
       
-# Class for Notes - sucssesful Tid - Need to learn about logging
+# Class for Notes
 class Notes:
     def __init__(self):
         self.notes = []
@@ -480,7 +478,7 @@ class Notes:
             
 
 def main():
-    base_url = "https://console.kamatera.com"
+    base_url = ""
 
     auth_headers = {
         "Authorization": "Bearer " + authentication_token
