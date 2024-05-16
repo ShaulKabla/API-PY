@@ -98,7 +98,6 @@ class GetRequests:
         return response.json()
     
     # GetServers API 
-    # Valid requests
     def get_servers(self):
         url = self.base_url + "/service/servers"
         servers = self.get(url)
