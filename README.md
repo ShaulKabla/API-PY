@@ -2,7 +2,7 @@
 
 WarCrew Automated Tool is a comprehensive Python application designed to automate various server management tasks using RESTful API calls. This tool supports creating, cloning, and listing servers, managing server power states, monitoring process statuses, and more.
 
-![Postman requests](APIREQ.JPG)
+![Postman requests](APIREQ.jpg)
 
 ## Features
 
